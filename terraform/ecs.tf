@@ -9,6 +9,21 @@ resource "aws_ecs_cluster" "cluster" {
   name = local.namespace
 }
 
+# ECR to hold our slightly customized Docker image
+resource "aws_ecr_repository" "hello-world" {
+  encryption_configuration {
+    encryption_type = "KMS"
+    kms_key = aws_kms_key.primary.id
+  }
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+  image_tag_mutability = "IMMUTABLE"
+
+  name = "${local.namespace}-hello-world"
+}
+
 # Task execution assumed role
 data "aws_iam_policy_document" "ecs_task_assume_role" {
   statement {
