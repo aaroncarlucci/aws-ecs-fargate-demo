@@ -90,8 +90,8 @@ jobs:
         id: build-image
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          REPOSITORY: "aws-ecs-demo-${{ inputs.environment_name }}"
-          IMAGE_TAG: "hello-world/${{ github.sha }}"
+          REPOSITORY: "aws-swan-demo-${{ inputs.environment_name }}/hello-world"
+          IMAGE_TAG: ${{ github.sha }}
         run: |
           docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
