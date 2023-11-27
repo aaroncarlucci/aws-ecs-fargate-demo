@@ -54,7 +54,7 @@ jobs:
           role-to-assume: ${{ secrets.aws_assume_role_arn }}
           aws-region: ${{ inputs.aws_region }}
 
-      # Terraform section
+      # Terraform setup
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
@@ -98,6 +98,7 @@ jobs:
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
+      # Terraform provision
       - name: Terraform Apply
         id: terraform-apply
         run: |
