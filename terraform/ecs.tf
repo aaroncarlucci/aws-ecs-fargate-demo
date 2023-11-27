@@ -136,8 +136,7 @@ resource "aws_ecs_service" "hello_world" {
     ignore_changes = [desired_count]
   }
 
-  # TODO: consider service encrypted internal traffic between
-  #  ALB and ECS container on 443 - requires self-signed cert
+  # SSL traffic served on 443 using a self-signed cert
   load_balancer {
     target_group_arn = aws_lb_target_group.alb.arn
     container_name   = "hello-world"
