@@ -1,7 +1,7 @@
 [
     {
         "name": "hello-world",
-        "image": "${namespace}/hello-world:${git_sha}",
+        "image": "${image}",
         "cpu": ${cpu},
         "memory": ${memory},
         "portMappings": [
