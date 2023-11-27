@@ -59,43 +59,33 @@ resource "aws_iam_role_policy_attachment" "hello_world_aws_task_execution_role_p
 
 # Task definition for Hello World server featuring CloudWatch logs integration
 resource "aws_ecs_task_definition" "hello_world" {
-  # container_definitions = jsonencode([
-  #   {
-  #     # The same value is used for task and service because there is only one task.
-  #     cpu = var.cpu
-  #     # TODO: parameterize image and/or adjust for a customized container image
-  #     image = "nginxdemos/hello:0.3"
-  #     logConfiguration = {
-  #       logDriver = "awslogs"
-  #       options = {
-  #         "awslogs-group" : aws_cloudwatch_log_group.hello_world.name
-  #         "awslogs-region" : var.aws_region
-  #         "awslogs-stream-prefix" : local.namespace
-  #       }
-  #     },
-  #     # The same value is used for task and service because there is only one task.
-  #     memory      = var.memory
-  #     name        = "hello-world"
-  #     networkMode = "FARGATE"
-  #     portMappings = [
-  #       {
-  #         hostPort      = 80,
-  #         containerPort = 80,
-  #         protocol      = "tcp"
-  #       }
-  #     ]
-  #   }
-  # ])
+  container_definitions = jsonencode([
+    {
+      # The same value is used for task and service because there is only one task.
+      cpu = var.cpu
 
-  container_definitions = templatefile("${path.module}/templates/ecs-task-definition--hello-world.tpl", {
-    cpu              = var.cpu
-    image            = local.ecs_hello_world_image
-    memory           = var.memory
-    namespace        = local.namespace
-    log_group_name   = aws_cloudwatch_log_group.hello_world.name
-    log_group_region = var.aws_region
-    log_group_prefix = local.namespace
-  })
+      image = local.ecs_hello_world_image
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group" : aws_cloudwatch_log_group.hello_world.name
+          "awslogs-region" : var.aws_region
+          "awslogs-stream-prefix" : local.namespace
+        }
+      },
+      # The same value is used for task and service because there is only one task.
+      memory      = var.memory
+      name        = "hello-world"
+      networkMode = "FARGATE"
+      portMappings = [
+        {
+          hostPort      = 443,
+          containerPort = 443,
+          protocol      = "tcp"
+        }
+      ]
+    }
+  ])
 
   cpu                      = var.cpu
   execution_role_arn       = aws_iam_role.ecs_task_execution.arn
