@@ -84,7 +84,7 @@ jobs:
       # Docker section
       - name: Login to AWS ECR
         id: login-ecr
-        uses: aws-actions/aws-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build, tag and push docker image to ECR
         id: build-image
