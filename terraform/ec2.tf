@@ -47,16 +47,16 @@ resource "aws_security_group_rule" "alb_egress_all" {
 resource "aws_lb_target_group" "alb" {
   # name not specified as it creates conflicts when resource needs to be replaced. Depend
   #  on tags to identify target groups in the console.
-  port        = 80
-  protocol    = "HTTP"
+  port        = 443
+  protocol    = "HTTPS"
   target_type = "ip"
 
   health_check {
     # TODO: review health check
     enabled  = true
     path     = "/"
-    port     = 80
-    protocol = "HTTP"
+    port     = 443
+    protocol = "HTTPS"
   }
 
   vpc_id = aws_vpc.vpc.id
