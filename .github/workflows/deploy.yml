@@ -78,6 +78,7 @@ jobs:
             -var="aws_replication_region=${{ inputs.aws_replication_region }}" \
             -var="dns_name=${{ inputs.dns_name }}" \
             -var="environment=${{ inputs.environment_name }}" \
+            -var="image_tag=${{ github.sha }}" \
             -var="vpc_cidr_index=${{ inputs.vpc_cidr_index }}"
         working-directory: ./terraform
 
@@ -106,6 +107,7 @@ jobs:
             -var="aws_replication_region=${{ inputs.aws_replication_region }}" \
             -var="dns_name=${{ inputs.dns_name }}" \
             -var="environment=${{ inputs.environment_name }}" \
+            -var="image_tag=${{ github.sha }}" \
             -var="vpc_cidr_index=${{ inputs.vpc_cidr_index }}"
         working-directory: ./terraform
 

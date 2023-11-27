@@ -89,7 +89,7 @@ resource "aws_ecs_task_definition" "hello_world" {
 
   container_definitions = templatefile("${path.module}/templates/ecs-task-definition--hello-world.tpl", {
     cpu              = var.cpu
-    git_sha          = data.external.git_checkout.result.sha
+    git_sha          = var.image_tag
     memory           = var.memory
     namespace        = local.namespace
     log_group_name   = aws_cloudwatch_log_group.hello_world.name
