@@ -10,10 +10,10 @@ resource "aws_ecs_cluster" "cluster" {
 }
 
 # ECR to hold our slightly customized Docker image
-resource "aws_ecr_repository" "hello-world" {
+resource "aws_ecr_repository" "hello_world" {
   encryption_configuration {
     encryption_type = "KMS"
-    kms_key = aws_kms_key.primary.id
+    kms_key         = aws_kms_key.primary.arn
   }
 
   image_scanning_configuration {
@@ -21,7 +21,7 @@ resource "aws_ecr_repository" "hello-world" {
   }
   image_tag_mutability = "IMMUTABLE"
 
-  name = "${local.namespace}-hello-world"
+  name = "${local.namespace}/hello-world"
 }
 
 # Task execution assumed role
@@ -57,35 +57,49 @@ resource "aws_iam_role_policy_attachment" "hello_world_aws_task_execution_role_p
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+data "external" "git_checkout" {
+  program = ["${path.module}/../git-sha.sh"]
+}
+
 # Task definition for Hello World server featuring CloudWatch logs integration
 resource "aws_ecs_task_definition" "hello_world" {
-  container_definitions = jsonencode([
-    {
-      # The same value is used for task and service because there is only one task.
-      cpu = var.cpu
-      # TODO: parameterize image and/or adjust for a customized container image
-      image = "nginxdemos/hello:0.3"
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          "awslogs-group" : aws_cloudwatch_log_group.hello_world.name
-          "awslogs-region" : var.aws_region
-          "awslogs-stream-prefix" : local.namespace
-        }
-      },
-      # The same value is used for task and service because there is only one task.
-      memory      = var.memory
-      name        = "hello-world"
-      networkMode = "FARGATE"
-      portMappings = [
-        {
-          hostPort      = 80,
-          containerPort = 80,
-          protocol      = "tcp"
-        }
-      ]
-    }
-  ])
+  # container_definitions = jsonencode([
+  #   {
+  #     # The same value is used for task and service because there is only one task.
+  #     cpu = var.cpu
+  #     # TODO: parameterize image and/or adjust for a customized container image
+  #     image = "nginxdemos/hello:0.3"
+  #     logConfiguration = {
+  #       logDriver = "awslogs"
+  #       options = {
+  #         "awslogs-group" : aws_cloudwatch_log_group.hello_world.name
+  #         "awslogs-region" : var.aws_region
+  #         "awslogs-stream-prefix" : local.namespace
+  #       }
+  #     },
+  #     # The same value is used for task and service because there is only one task.
+  #     memory      = var.memory
+  #     name        = "hello-world"
+  #     networkMode = "FARGATE"
+  #     portMappings = [
+  #       {
+  #         hostPort      = 80,
+  #         containerPort = 80,
+  #         protocol      = "tcp"
+  #       }
+  #     ]
+  #   }
+  # ])
+
+  container_definitions = templatefile("${path.module}/templates/ecs-task-definition--hello-world.tpl", {
+    cpu              = var.cpu
+    git_sha          = data.external.git_checkout.result.sha
+    memory           = var.memory
+    namespace        = local.namespace
+    log_group_name   = aws_cloudwatch_log_group.hello_world.name
+    log_group_region = var.aws_region
+    log_group_prefix = local.namespace
+  })
 
   cpu                      = var.cpu
   execution_role_arn       = aws_iam_role.ecs_task_execution.arn
