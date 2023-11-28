@@ -47,7 +47,7 @@ data "aws_iam_policy_document" "ecs_task_assume_role" {
 }
 
 resource "aws_iam_role" "ecs_task_execution" {
-  name               = "${local.namespace}_ecs_task_execution"
+  name               = "${local.namespace}-ecs-task-execution"
   assume_role_policy = data.aws_iam_policy_document.ecs_task_assume_role.json
 }
 
@@ -55,6 +55,24 @@ resource "aws_iam_role" "ecs_task_execution" {
 resource "aws_iam_role_policy_attachment" "hello_world_aws_task_execution_role_policy" {
   role       = aws_iam_role.ecs_task_execution.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+data "aws_iam_policy_document" "hello_world_task_execution_role_policy" {
+  # Allow access to self-signed SSL certs for nginx on task bootstrap
+  statement {
+    actions = ["ssm:GetParameter"]
+    effect  = "Allow"
+    resources = [
+      aws_ssm_parameter.app_ssl_key.arn,
+      aws_ssm_parameter.app_ssl_cert.arn
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "hello_world_task_execution_role_policy" {
+  name   = "${local.namespace}-hello-world-task-execution"
+  role   = aws_iam_role.ecs_task_execution.id
+  policy = data.aws_iam_policy_document.hello_world_task_execution_role_policy.json
 }
 
 # Task definition for Hello World server featuring CloudWatch logs integration
