@@ -1,6 +1,6 @@
 FROM alpine:3.18.4
 
-RUN apk add aws-cli nginx openssl
+RUN apk add nginx openssl
 
 COPY nginx.conf /etc/nginx/http.d/default.conf
 COPY index.html /usr/share/nginx/html/index.html
