@@ -26,7 +26,7 @@ Route53 hosted zones are provisioned for each environment and DNS name servers a
 * DNS name resolution
 * Custom Hello World Nginx container image hosted in ECR with CI/CD deployment workflow
 * SSL traffic encryption:
-    * Public HTTPS traffic
+    * Public HTTPS traffic with ACM certificate and support for attaching external ACM certificates by ARN for custom domains for CNAME records
     * Encryption everywhere for private VPC traffic
         * Self-signed certificate generation
         * SSM Parameter Store secrets for key and certificate encrypted using KMS CMK
