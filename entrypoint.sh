@@ -2,9 +2,9 @@
 
 set -e
 
-echo "Retrieving SSL certificate from SSM..."
-aws ssm get-parameter --name /terraform/aws-swan-demo/${ENVIRONMENT}/ssl-certificate-key --with-decryption --output text --query "Parameter.Value" > /etc/ssl/private/key.pem
-aws ssm get-parameter --name /terraform/aws-swan-demo/${ENVIRONMENT}/ssl-certificate --with-decryption --output text --query "Parameter.Value" > /etc/ssl/certs/cert.pem
+echo "Provisioning SSL certificate from SSM..."
+echo "$SSL_KEY" > /etc/ssl/private/key.pem
+echo "$SSL_CERT" > /etc/ssl/certs/cert.pem
 
 if [[ -z ${1} ]]; then
     echo "Starting nginx..."

@@ -19,7 +19,8 @@ resource "aws_ecr_repository" "hello_world" {
   image_scanning_configuration {
     scan_on_push = true
   }
-  image_tag_mutability = "IMMUTABLE"
+  # TODO: Temporary?
+  image_tag_mutability = "MUTABLE"
 
   name = "${local.namespace}/hello-world"
 }
@@ -60,7 +61,7 @@ resource "aws_iam_role_policy_attachment" "hello_world_aws_task_execution_role_p
 data "aws_iam_policy_document" "hello_world_task_execution_role_policy" {
   # Allow access to self-signed SSL certs for nginx on task bootstrap
   statement {
-    actions = ["ssm:GetParameter"]
+    actions = ["ssm:GetParameters"]
     effect  = "Allow"
     resources = [
       aws_ssm_parameter.app_ssl_key.arn,
@@ -100,6 +101,16 @@ resource "aws_ecs_task_definition" "hello_world" {
           hostPort      = 443,
           containerPort = 443,
           protocol      = "tcp"
+        }
+      ]
+      secrets = [
+        {
+          name      = "SSL_KEY"
+          valueFrom = aws_ssm_parameter.app_ssl_key.arn
+        },
+        {
+          name      = "SSL_CERT"
+          valueFrom = aws_ssm_parameter.app_ssl_cert.arn
         }
       ]
     }
