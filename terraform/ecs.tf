@@ -130,7 +130,7 @@ resource "aws_ecs_task_definition" "hello_world" {
   requires_compatibilities = ["FARGATE"]
 }
 
-# Security group for the hello-world ECS service accepts HTTP
+# Security group for the hello-world ECS service accepts HTTPS
 #  connections from the ALB security group
 resource "aws_security_group" "app" {
   name   = "${local.namespace}-app"
