@@ -1,3 +1,12 @@
+# Unreleased
+
+* Customized Hello World Nginx container hosted in ECR
+* Container deployment CI/CD workflow
+* Encryption everywhere for private traffic:
+    * Self-signed certificate generation
+    * SSM Parameter Store secrets for key and certificate encrypted using KMS CMK
+    * Certificate installation and configuration on ECS task bootstrap
+
 # 0.3.0
 
 * Additional ACM certificate assignment
