@@ -68,6 +68,12 @@ data "aws_iam_policy_document" "hello_world_task_execution_role_policy" {
       aws_ssm_parameter.app_ssl_cert.arn
     ]
   }
+
+  statement {
+    actions   = ["kms:Decrypt"]
+    effect    = "Allow"
+    resources = [aws_kms_key.primary.arn]
+  }
 }
 
 resource "aws_iam_role_policy" "hello_world_task_execution_role_policy" {

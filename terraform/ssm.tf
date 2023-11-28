@@ -1,5 +1,7 @@
 resource "aws_ssm_parameter" "app_ssl_key" {
   description = "The self-signed SSL certificate key for the ECS application tasks."
+  key_id      = aws_kms_key.primary.id
+
   # Parameter name cannot start with "aws", so using the awkward /terraform namespace
   name  = "/terraform/${local.application_name}/${var.environment}/ssl-certificate-key"
   type  = "SecureString"
@@ -8,6 +10,8 @@ resource "aws_ssm_parameter" "app_ssl_key" {
 
 resource "aws_ssm_parameter" "app_ssl_cert" {
   description = "The self-signed SSL certificate for the ECS application tasks."
+  key_id      = aws_kms_key.primary.id
+
   # Parameter name cannot start with "aws", so using the awkward /terraform namespace
   name  = "/terraform/${local.application_name}/${var.environment}/ssl-certificate"
   type  = "SecureString"
