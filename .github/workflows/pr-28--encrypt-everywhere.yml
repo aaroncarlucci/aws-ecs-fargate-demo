@@ -26,7 +26,7 @@ jobs:
       aws_region: us-east-1
       aws_replication_region: us-west-2
       aws_s3_terraform_state_object_key: pull-requests/pr-28.tfstate
-      dns_name: pr-28.aws-ecs-demo.carlucci.network
+      dns_name: pr-28.aws-ecs-fargate-demo.carlucci.network
       environment_name: pr-28
       vpc_cidr_index: 4
     secrets:
