@@ -27,6 +27,11 @@ variable "dns_name" {
   type        = string
 }
 
+variable "image_tag" {
+  description = "The tag of the container image in ECR to deploy. Should be the current Git SHA."
+  type        = string
+}
+
 variable "memory" {
   default     = 512
   description = "The memory resources allocated to the ECS service."

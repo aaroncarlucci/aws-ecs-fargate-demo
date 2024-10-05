@@ -1,0 +1,34 @@
+name: Deploy PR 28 - Encrypt everywhere
+
+on:
+  push:
+    branches:
+      - feature/encrypt-everywhere--wild-workflow
+
+permissions:
+  id-token: write    # This is required for requesting the JWT
+  contents: read     # This is required for actions/checkout
+
+jobs:
+  deploy:
+    name: Deploy to pr-28
+    uses: ./.github/workflows/deploy.yml
+    # Originally the workflow implementation was setup to use environment
+    #  variables configured in the Github repository settings. However,
+    #  after moving to a reusable action, it became ugly to pass those values
+    #  into the called action due to this bug:
+    #
+    #    https://github.com/orgs/community/discussions/26671#discussioncomment-4295807
+    #
+    #  So now we're hardcoding the values here and using it as a manifest. Please see
+    #  commit 1ec7a0346abc04b73c03e35c0e228e9dba14300c for the previous implementation.
+    with:
+      aws_region: us-east-1
+      aws_replication_region: us-west-2
+      aws_s3_terraform_state_object_key: pull-requests/pr-28.tfstate
+      dns_name: pr-28.aws-ecs-fargate-demo.carlucci.network
+      environment_name: pr-28
+      vpc_cidr_index: 4
+    secrets:
+      aws_assume_role_arn: ${{ secrets.AWS_ASSUME_ROLE_ARN }}
+      aws_s3_terraform_state_bucket_name: ${{ secrets.AWS_S3_TERRAFORM_STATE_BUCKET_NAME }}

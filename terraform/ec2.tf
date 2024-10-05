@@ -1,6 +1,4 @@
-# Security group for the ALB accepting HTTP connections on port 80
-#
-# TODO: implement SSL encrypted traffic and redirect HTTP to HTTPS
+# Security group for the ALB accepting HTTP connections on ports 80 and 443
 resource "aws_security_group" "alb" {
   name   = "${local.namespace}-alb"
   vpc_id = aws_vpc.vpc.id
@@ -39,24 +37,20 @@ resource "aws_security_group_rule" "alb_egress_all" {
   type              = "egress"
 }
 
-# Currently SSL is terminated at the ALB and traffic is unencrypted
-#  inside the VPC.
-#
-# TODO: adopt "Encryption Everywhere" policy by protecting internal traffic
-#  between the ALB and the application service as well (#15)
+# Adopt "Encryption Everywhere" policy by protecting internal traffic
+#  between the ALB and the application service as well.
 resource "aws_lb_target_group" "alb" {
   # name not specified as it creates conflicts when resource needs to be replaced. Depend
   #  on tags to identify target groups in the console.
-  port        = 80
-  protocol    = "HTTP"
+  port        = 443
+  protocol    = "HTTPS"
   target_type = "ip"
 
   health_check {
-    # TODO: review health check
     enabled  = true
     path     = "/"
-    port     = 80
-    protocol = "HTTP"
+    port     = 443
+    protocol = "HTTPS"
   }
 
   vpc_id = aws_vpc.vpc.id

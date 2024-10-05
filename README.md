@@ -24,7 +24,13 @@ Route53 hosted zones are provisioned for each environment and DNS name servers a
 * Definition of a KMS customer managed key for encryption, with support for cross-region replication to enable future multi-region deployments
 * CloudWatch logging with KMS CMK encryption
 * DNS name resolution
-* SSL traffic encryption terminating at the ALB
+* Custom Hello World Nginx container image hosted in ECR with CI/CD deployment workflow
+* SSL traffic encryption:
+    * Public HTTPS traffic with ACM certificate and support for attaching external ACM certificates by ARN for custom domains for CNAME records
+    * Encryption everywhere for private VPC traffic
+        * Self-signed certificate generation
+        * SSM Parameter Store secrets for key and certificate encrypted using KMS CMK
+        * Certificate installation and configuration on ECS task bootstrap
 
 ## Contributing
 

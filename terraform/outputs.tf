@@ -7,3 +7,8 @@ output "dns_name" {
   description = "The DNS name of the application."
   value       = var.dns_name
 }
+
+output "namespace" {
+  description = "The namespace of the application."
+  value       = local.namespace
+}

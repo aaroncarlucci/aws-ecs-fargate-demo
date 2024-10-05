@@ -9,6 +9,22 @@ resource "aws_ecs_cluster" "cluster" {
   name = local.namespace
 }
 
+# ECR to hold our slightly customized Docker image
+resource "aws_ecr_repository" "hello_world" {
+  encryption_configuration {
+    encryption_type = "KMS"
+    kms_key         = aws_kms_key.primary.arn
+  }
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+  # TODO: Temporary?
+  image_tag_mutability = "MUTABLE"
+
+  name = "${local.namespace}/hello-world"
+}
+
 # Task execution assumed role
 data "aws_iam_policy_document" "ecs_task_assume_role" {
   statement {
@@ -32,7 +48,7 @@ data "aws_iam_policy_document" "ecs_task_assume_role" {
 }
 
 resource "aws_iam_role" "ecs_task_execution" {
-  name               = "${local.namespace}_ecs_task_execution"
+  name               = "${local.namespace}-ecs-task-execution"
   assume_role_policy = data.aws_iam_policy_document.ecs_task_assume_role.json
 }
 
@@ -42,14 +58,38 @@ resource "aws_iam_role_policy_attachment" "hello_world_aws_task_execution_role_p
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+data "aws_iam_policy_document" "hello_world_task_execution_role_policy" {
+  # Allow access to self-signed SSL certs for nginx on task bootstrap
+  statement {
+    actions = ["ssm:GetParameters"]
+    effect  = "Allow"
+    resources = [
+      aws_ssm_parameter.app_ssl_key.arn,
+      aws_ssm_parameter.app_ssl_cert.arn
+    ]
+  }
+
+  statement {
+    actions   = ["kms:Decrypt"]
+    effect    = "Allow"
+    resources = [aws_kms_key.primary.arn]
+  }
+}
+
+resource "aws_iam_role_policy" "hello_world_task_execution_role_policy" {
+  name   = "${local.namespace}-hello-world-task-execution"
+  role   = aws_iam_role.ecs_task_execution.id
+  policy = data.aws_iam_policy_document.hello_world_task_execution_role_policy.json
+}
+
 # Task definition for Hello World server featuring CloudWatch logs integration
 resource "aws_ecs_task_definition" "hello_world" {
   container_definitions = jsonencode([
     {
       # The same value is used for task and service because there is only one task.
       cpu = var.cpu
-      # TODO: parameterize image and/or adjust for a customized container image
-      image = "nginxdemos/hello:0.3"
+
+      image = local.ecs_hello_world_image
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -64,9 +104,19 @@ resource "aws_ecs_task_definition" "hello_world" {
       networkMode = "FARGATE"
       portMappings = [
         {
-          hostPort      = 80,
-          containerPort = 80,
+          hostPort      = 443,
+          containerPort = 443,
           protocol      = "tcp"
+        }
+      ]
+      secrets = [
+        {
+          name      = "SSL_KEY"
+          valueFrom = aws_ssm_parameter.app_ssl_key.arn
+        },
+        {
+          name      = "SSL_CERT"
+          valueFrom = aws_ssm_parameter.app_ssl_cert.arn
         }
       ]
     }
@@ -80,20 +130,20 @@ resource "aws_ecs_task_definition" "hello_world" {
   requires_compatibilities = ["FARGATE"]
 }
 
-# Security group for the hello-world ECS service accepts HTTP
+# Security group for the hello-world ECS service accepts HTTPS
 #  connections from the ALB security group
 resource "aws_security_group" "app" {
   name   = "${local.namespace}-app"
   vpc_id = aws_vpc.vpc.id
 }
 
-resource "aws_security_group_rule" "app_ingress_http" {
-  description              = "Allow HTTP from ALB"
-  from_port                = 80
+resource "aws_security_group_rule" "app_ingress_https" {
+  description              = "Allow HTTPS from ALB"
+  from_port                = 443
   protocol                 = "tcp"
   security_group_id        = aws_security_group.app.id
   source_security_group_id = aws_security_group.alb.id
-  to_port                  = 80
+  to_port                  = 443
   type                     = "ingress"
 }
 
@@ -121,12 +171,11 @@ resource "aws_ecs_service" "hello_world" {
     ignore_changes = [desired_count]
   }
 
-  # TODO: consider service encrypted internal traffic between
-  #  ALB and ECS container on 443 - requires self-signed cert
+  # SSL traffic served on 443 using a self-signed cert
   load_balancer {
     target_group_arn = aws_lb_target_group.alb.arn
     container_name   = "hello-world"
-    container_port   = 80
+    container_port   = 443
   }
 
   network_configuration {

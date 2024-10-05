@@ -44,6 +44,7 @@ jobs:
     name: Deploy
     runs-on: ubuntu-latest
     steps:
+      # Setup section
       - name: Clone the Git repository
         uses: actions/checkout@v3
 
@@ -53,6 +54,7 @@ jobs:
           role-to-assume: ${{ secrets.aws_assume_role_arn }}
           aws-region: ${{ inputs.aws_region }}
 
+      # Terraform setup
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
@@ -68,7 +70,37 @@ jobs:
             -backend-config="region=${{ inputs.aws_region }}"
         working-directory: ./terraform
 
+      - name: Terraform Apply - ECR only
+        id: terraform-apply-ecr
+        run: |
+          terraform apply -auto-approve -target=aws_ecr_repository.hello_world \
+            -var="aws_region=${{ inputs.aws_region }}" \
+            -var="aws_replication_region=${{ inputs.aws_replication_region }}" \
+            -var="dns_name=${{ inputs.dns_name }}" \
+            -var="environment=${{ inputs.environment_name }}" \
+            -var="image_tag=${{ github.sha }}" \
+            -var="vpc_cidr_index=${{ inputs.vpc_cidr_index }}"
+        working-directory: ./terraform
+
+      # Docker section
+      - name: Login to AWS ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag and push docker image to ECR
+        id: build-image
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: "aws-ecs-fargate-demo-${{ inputs.environment_name }}/hello-world"
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      # Terraform provision
       - name: Terraform Apply
+        id: terraform-apply
         run: |
           terraform apply -auto-approve \
             -var="additional_certificate_arns=${{ inputs.additional_certificate_arns }}" \
@@ -76,5 +108,6 @@ jobs:
             -var="aws_replication_region=${{ inputs.aws_replication_region }}" \
             -var="dns_name=${{ inputs.dns_name }}" \
             -var="environment=${{ inputs.environment_name }}" \
+            -var="image_tag=${{ github.sha }}" \
             -var="vpc_cidr_index=${{ inputs.vpc_cidr_index }}"
         working-directory: ./terraform
